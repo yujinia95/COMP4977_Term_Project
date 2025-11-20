@@ -1,70 +1,121 @@
 import SwiftUI
 
 struct SignupView: View {
-    @State private var name = ""
-    @State private var email = ""
-    @State private var password = ""
-
+    @EnvironmentObject var appState: AppState
+    @StateObject private var viewModel = SignupViewModel()
+    @State private var showErrorAlert = false
+    @State private var navigateToLogin = false
+    @Environment(\.dismiss) private var dismiss
+    
     var body: some View {
         ZStack {
             PastelStripeBackground()
 
             VStack(spacing: AppTheme.vSpacing) {
+                
+                // Back Button
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.black.opacity(0.8))
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 4)
+                    }
+
+                    Spacer()
+                }
+                
+                // Title
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Create account")
                         .font(.title.weight(.bold))
                         .foregroundStyle(.black.opacity(0.9))
-                    Text("Join Aurora Color")
+                    Text("Sign up to get started")
                         .foregroundStyle(.black.opacity(0.6))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                
+                NavigationLink(isActive: $navigateToLogin) {
+                    LoginView()
+                } label: { EmptyView() }
+                .hidden()
 
+                // Fields
                 VStack(spacing: 12) {
-                    TextField("Name", text: $name).authField()
-                    TextField("Email", text: $email)
+                    TextField("Name", text: $viewModel.username)
+                        .textContentType(.name)
+                        .authField()
+
+                    TextField("Email", text: $viewModel.email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
+                        .disableAutocorrection(true)
                         .authField()
-                    SecureField("Password", text: $password)
+
+                    SecureField("Password", text: $viewModel.password)
                         .textContentType(.newPassword)
                         .authField()
                 }
 
-                Button { /* UI only */ } label: {
-                    Text("Sign Up")
-                        .frame(maxWidth: .infinity)
+                // Error text
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(.red.opacity(0.8))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                // Sign up button
+                Button {
+                    Task {
+                        let success = await viewModel.signUp()
+                        if success {
+                            // After successful signup, navigate to Login
+                            navigateToLogin = true
+                        } else {
+                            showErrorAlert = true
+                        }
+                    }
+                } label: {
+                    Text(viewModel.isLoading ? "Creating account…" : "Sign up")
                 }
                 .buttonStyle(FilledButtonStyle())
+                .disabled(viewModel.isLoading)
+
+                // Link back to login
+                HStack(spacing: 4) {
+                    Text("Already have an account?")
+                        .foregroundStyle(.black.opacity(0.6))
+                    NavigationLink("Log in") {
+                        LoginView()
+                    }
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Color.pastelBlue)
+                }
+                .padding(.top, 4)
+
+                Spacer()
             }
             .padding(AppTheme.hPadding)
-            .padding(.vertical, 24)
-            .background(.white.opacity(0.85))
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(.black.opacity(0.06), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.06), radius: 20, y: 12)
-            .padding(.horizontal, AppTheme.hPadding)
-            .navigationTitle("Sign Up")
         }
-        .scrollDismissesKeyboard(.interactively)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .toolbarBackground(.clear, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar)
+        .alert("Sign up failed", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "Please try again.")
+        }
     }
 }
 
-struct SignupView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            NavigationStack { SignupView() }
-                .previewDisplayName("Signup • Light")
-            NavigationStack { SignupView() }
-                .preferredColorScheme(.dark)
-                .previewDisplayName("Signup • Dark")
-        }
-    }
+#Preview("Signup • Light") {
+    NavigationStack { SignupView() }
+        .environmentObject(AppState())
 }
+

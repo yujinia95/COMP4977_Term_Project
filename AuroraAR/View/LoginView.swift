@@ -1,14 +1,37 @@
 import SwiftUI
 
 struct LoginView: View {
-    @State private var email = ""
-    @State private var password = ""
-
+    
+    @EnvironmentObject var appState: AppState
+    @StateObject private var viewModel = LoginViewModel()
+    @State private var showErrorAlert = false
+    @Environment(\.dismiss) private var dismiss
+    
     var body: some View {
         ZStack {
             PastelStripeBackground()
-
+            
             VStack(spacing: AppTheme.vSpacing) {
+                
+                // Back Button
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.black.opacity(0.8))
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 4)
+                    }
+
+                    Spacer()
+                }
+                
+                // Title
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Welcome back")
                         .font(.title.weight(.bold))
@@ -17,60 +40,71 @@ struct LoginView: View {
                         .foregroundStyle(.black.opacity(0.6))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-
+                
+                // Login form
                 VStack(spacing: 12) {
-                    TextField("Email", text: $email)
+                    TextField("Email", text: $viewModel.usernameOrEmail)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .authField()
-
-                    SecureField("Password", text: $password)
+                    
+                    SecureField("Password", text: $viewModel.password)
                         .textContentType(.password)
                         .authField()
                 }
-
-                Button { /* UI only */ } label: {
-                    Text("Log In")
-                        .frame(maxWidth: .infinity)
+                
+                // Error text
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(.red.opacity(0.8))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
+                // Login button
+                Button {
+                    Task {
+                        let success = await viewModel.login()
+                        if success {
+                            appState.isLoggedIn = true
+                        } else {
+                            showErrorAlert = true
+                        }
+                    }
+                } label: {
+                    Text(viewModel.isLoading ? "Logging in…" : "Log in")
                 }
                 .buttonStyle(FilledButtonStyle())
-
-                HStack {
-                    Spacer()
-                    NavigationLink("Create an account") { SignupView() }
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.black.opacity(0.75))
+                .disabled(viewModel.isLoading)
+                
+                // Link to signup
+                HStack(spacing: 4) {
+                    Text("Don't have an account?")
+                        .foregroundStyle(.black.opacity(0.6))
+                    NavigationLink("Sign up") {
+                        SignupView()
+                    }
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Color.pastelBlue)
                 }
+                .padding(.top, 4)
+                
+                Spacer()
             }
             .padding(AppTheme.hPadding)
-            .padding(.vertical, 24)
-            .background(.white.opacity(0.85))
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(.black.opacity(0.06), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.06), radius: 20, y: 12)
-            .padding(.horizontal, AppTheme.hPadding)
-            .navigationTitle("Log In")
         }
-        .scrollDismissesKeyboard(.interactively)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .toolbarBackground(.clear, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar)
+        .alert("Login failed", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "Please try again.")
+        }
     }
 }
 
-struct LoginView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            NavigationStack { LoginView() }
-                .previewDisplayName("Login • Light")
-            NavigationStack { LoginView() }
-                .preferredColorScheme(.dark)
-                .previewDisplayName("Login • Dark")
-        }
-    }
+#Preview("Login • Light") {
+    NavigationStack { LoginView() }
+        .environmentObject(AppState())
 }

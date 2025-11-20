@@ -9,9 +9,13 @@ import SwiftUI
 
 @main
 struct AuroraARApp: App {
+    
+    @StateObject private var appState = AppState()
+    
     var body: some Scene {
         WindowGroup {
-            LandingView()
+            RootView()
+                .environmentObject(appState)
         }
     }
 }

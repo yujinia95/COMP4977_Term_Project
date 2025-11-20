@@ -48,9 +48,6 @@ struct LandingView_Previews: PreviewProvider {
         Group {
             NavigationStack { LandingView() }
                 .previewDisplayName("Landing • Light")
-            NavigationStack { LandingView() }
-                .preferredColorScheme(.dark)
-                .previewDisplayName("Landing • Dark")
         }
     }
 }

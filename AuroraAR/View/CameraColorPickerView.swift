@@ -4,13 +4,16 @@
 //
 //  Created by Yujin Jeong on 2025-11-19.
 //
+// This is the view that allows the user to point their camera at something and tap to detect colours.
+
 import SwiftUI
 import AVFoundation
 
 struct CameraColorPickerView: View {
-    @StateObject private var viewModel = CameraColorPickerViewModel()
-    @Environment(\.dismiss) private var dismiss
-
+    @StateObject private var viewModel = CameraColorPickerViewModel() // Manages camera and color detection logic
+    @Environment(\.dismiss) private var dismiss // dismiss is a function to close THIS screen and go back
+    
+    // This Zstack contains the Camera, touch detection, back button
     var body: some View {
         ZStack {
             GeometryReader { geo in

@@ -16,7 +16,7 @@ struct PastelStripeBackground: View {
 
                 ForEach(0..<12, id: \.self) { i in
                     colors[i % colors.count]
-                        .frame(height: maxSide / 4) // chunky stripes
+                        .frame(height: maxSide / 4)
                 }
             }
             .frame(width: maxSide * 2.2, height: maxSide * 2.2)

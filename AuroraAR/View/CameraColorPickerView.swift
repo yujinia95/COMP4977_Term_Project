@@ -21,7 +21,6 @@ struct CameraColorPickerView: View {
                     CameraPreview(session: viewModel.session)
                         .ignoresSafeArea()
 
-                    // Tap overlay
                     Color.clear
                         .contentShape(Rectangle())
                         .gesture(
@@ -89,7 +88,6 @@ struct CameraColorPickerView: View {
                                             .lineLimit(1)
 
                                         Button {
-                                            // TODO: future: save to backend
                                         } label: {
                                             Text("Save")
                                                 .font(.caption2.bold())

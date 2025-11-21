@@ -1,4 +1,3 @@
-// Views/Menu/UserMenuView.swift
 import SwiftUI
 
 struct UserMenuView: View {
@@ -9,7 +8,7 @@ struct UserMenuView: View {
             PastelStripeBackground()
             
             VStack(spacing: AppTheme.vSpacing) {
-                // Card header
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Menu")
                         .font(.title.weight(.bold))

@@ -8,9 +8,16 @@ import AVFoundation
 import UIKit
 import Combine
 
+// ViewModel that:
+// - Manages the camera capture session
+// - Keeps the latest camera frame
+// - When user taps, analyzes a small area and finds the top 3 colors
 final class CameraColorPickerViewModel: NSObject, ObservableObject {
+
+    // List of colors detected from tap (up to 3)
     @Published var colors: [DetectedColor] = []
 
+    // The main camera capture session (controls camera input + output).
     let session = AVCaptureSession()
     private let videoOutput = AVCaptureVideoDataOutput()
     private let processingQueue = DispatchQueue(label: "CameraColorPicker.Queue")
@@ -21,8 +28,7 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
         configureSession()
     }
 
-    // MARK: - Session control
-
+    // Starts the camera session.
     func startSession() {
         processingQueue.async {
             if !self.session.isRunning {
@@ -30,7 +36,8 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
             }
         }
     }
-
+    
+    // Stops the camera session.
     func stopSession() {
         processingQueue.async {
             if self.session.isRunning {
@@ -39,8 +46,11 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Setup
-
+    // Configures the AVCaptureSession:
+    // - Chooses the back camera
+    // - Adds camera input
+    // - Sets up video output with BGRA pixels
+    // - Assigns self as the frame delegate
     private func configureSession() {
         session.beginConfiguration()
         session.sessionPreset = .high
@@ -50,7 +60,7 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
                                                    position: .back),
               let input = try? AVCaptureDeviceInput(device: device),
               session.canAddInput(input) else {
-            print("❌ Unable to create camera input")
+            print("Unable to create camera input")
             session.commitConfiguration()
             return
         }
@@ -65,19 +75,25 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
         if session.canAddOutput(videoOutput) {
             session.addOutput(videoOutput)
         } else {
-            print("❌ Cannot add video output")
+            print("Cannot add video output")
         }
 
         session.commitConfiguration()
     }
 
-    // MARK: - Tap handling
-
-    /// `normalizedPoint` is in 0...1 (x, y) relative to the screen
+    // Called when the user taps on the screen.
+    //
+    // Steps:
+    // - Use the latest camera frame
+    // - Convert tap location into pixel coordinates in the image
+    // - Sample a square region around that point
+    // - Group similar colors into "buckets"
+    // - Pick the top 3 most common buckets
+    // - Convert them into UIColor, hex string, and a simple name
     func captureColors(at normalizedPoint: CGPoint) {
         guard let buffer = latestBuffer,
               let pixelBuffer = CMSampleBufferGetImageBuffer(buffer) else {
-            print("⚠️ No frame yet")
+            print("No frame yet")
             return
         }
 
@@ -92,10 +108,9 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
         guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return }
 
         let xCenter = Int(normalizedPoint.x * CGFloat(width))
-        // Flip Y (screen coord vs buffer coord)
         let yCenter = Int((1.0 - normalizedPoint.y) * CGFloat(height))
 
-        let radius = 20 // sample 41x41 region
+        let radius = 20
         let xMin = max(0, xCenter - radius)
         let xMax = min(width - 1, xCenter + radius)
         let yMin = max(0, yCenter - radius)
@@ -112,7 +127,6 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
                 let g = pixelPtr.load(fromByteOffset: 1, as: UInt8.self)
                 let r = pixelPtr.load(fromByteOffset: 2, as: UInt8.self)
 
-                // Quantize (8 levels per channel) to group similar colours
                 let rq = Int(r) / 32
                 let gq = Int(g) / 32
                 let bq = Int(b) / 32
@@ -147,8 +161,7 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Helpers
-
+    // Converts a UIColor into a hex string like "#RRGGBB".
     private static func hexString(from color: UIColor) -> String {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         color.getRed(&r, green: &g, blue: &b, alpha: &a)
@@ -156,6 +169,9 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
                       Int(g * 255), Int(b * 255))
     }
 
+    // Gives a simple human-readable name based on the color’s
+    // - Black / White / Gray based on brightness & saturation
+    // - Otherwise, chooses a color name based on hue angle
     private static func simpleName(for color: UIColor) -> String {
         var h: CGFloat = 0, s: CGFloat = 0, v: CGFloat = 0, a: CGFloat = 0
         color.getHue(&h, saturation: &s, brightness: &v, alpha: &a)
@@ -179,12 +195,14 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
     }
 }
 
-// MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
 extension CameraColorPickerViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
+    
+    // This is called every time the camera provides a new frame.
+    // Just store the latest frame and use it later when the user taps on the screen.
     func captureOutput(_ output: AVCaptureOutput,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
-        // just store the latest frame
+        // Store latest frame so `captureColors` can read it
         latestBuffer = sampleBuffer
     }
 }

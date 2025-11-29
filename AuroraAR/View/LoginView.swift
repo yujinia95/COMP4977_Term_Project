@@ -5,12 +5,10 @@ struct LoginView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = LoginViewModel()
     @State private var showErrorAlert = false
-    @State private var goToMenu = false
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationStack {
-            ZStack {
+        ZStack {
                 PastelStripeBackground()
                 
                 VStack(spacing: AppTheme.vSpacing) {
@@ -28,14 +26,16 @@ struct LoginView: View {
                     
                     // Login form
                     VStack(spacing: 12) {
-                        TextField("Email or username", text: $viewModel.usernameOrEmail)
+                        TextField("", text: $viewModel.usernameOrEmail)
+                            .placeholder("Email or username", show: viewModel.usernameOrEmail.isEmpty)
                             .textContentType(.username)
                             .keyboardType(.emailAddress)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .authField()
                         
-                        SecureField("Password", text: $viewModel.password)
+                        SecureField("", text: $viewModel.password)
+                            .placeholder("Password", show: viewModel.password.isEmpty)
                             .textContentType(.password)
                             .authField()
                     }
@@ -54,7 +54,8 @@ struct LoginView: View {
                             if let auth = await viewModel.login() {
                                 // New authentication + authorization flow
                                 appState.setSession(token: auth.token, user: auth.user)
-                                dismiss()   // go back after successful login
+                                // Dismiss back to the root so RootView can switch to UserMenuView
+                                dismiss()
                             } else {
                                 showErrorAlert = true
                             }
@@ -74,7 +75,7 @@ struct LoginView: View {
                             SignupView()
                         }
                         .font(.callout.weight(.semibold))
-                        .foregroundStyle(Color.pastelBlue)
+                        .foregroundStyle(Color.black)
                     }
                     .padding(.top, 4)
                     
@@ -82,7 +83,6 @@ struct LoginView: View {
                 }
                 .padding(AppTheme.hPadding)
             }
-        }
         
         .alert("Login failed", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) {}

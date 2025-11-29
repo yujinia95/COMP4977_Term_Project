@@ -27,22 +27,26 @@ struct SignupView: View {
                 
                 // Fields
                 VStack(spacing: 12) {
-                    TextField("Name", text: $viewModel.username)
+                    TextField("", text: $viewModel.username)
+                        .placeholder("Name", show: viewModel.username.isEmpty)
                         .textContentType(.name)
                         .authField()
 
-                    TextField("Email", text: $viewModel.email)
+                    TextField("", text: $viewModel.email)
+                        .placeholder("Email", show: viewModel.email.isEmpty)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .disableAutocorrection(true)
                         .authField()
 
-                    SecureField("Password", text: $viewModel.password)
+                    SecureField("", text: $viewModel.password)
+                        .placeholder("Password", show: viewModel.password.isEmpty)
                         .textContentType(.newPassword)
                         .authField()
 
-                    SecureField("Confirm Password", text: $viewModel.confirmPassword)
+                    SecureField("", text: $viewModel.confirmPassword)
+                        .placeholder("Confirm Password", show: viewModel.confirmPassword.isEmpty)
                         .textContentType(.newPassword)
                         .authField()
                 }
@@ -82,7 +86,7 @@ struct SignupView: View {
                         LoginView()
                     }
                     .font(.callout.weight(.semibold))
-                    .foregroundStyle(Color.pastelBlue)
+                    .foregroundStyle(Color.black)
                 }
                 .padding(.top, 4)
 

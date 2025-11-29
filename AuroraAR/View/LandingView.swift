@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct LandingView: View {
+    @EnvironmentObject var appState: AppState
+    @State private var showLogin = false
     var body: some View {
         ZStack {
             PastelStripeBackground()
@@ -22,10 +24,8 @@ struct LandingView: View {
                     }
 
                     VStack(spacing: 12) {
-                        NavigationLink { LoginView() } label: {
-                            Text("Log In")
-                        }
-                        .buttonStyle(FilledButtonStyle())
+                        Button { showLogin = true } label: { Text("Log In") }
+                            .buttonStyle(FilledButtonStyle())
 
                         NavigationLink { SignupView() } label: {
                             Text("Sign Up")
@@ -38,6 +38,12 @@ struct LandingView: View {
                 .padding(.horizontal, AppTheme.hPadding)
 
                 Spacer()
+            }
+        }
+        .fullScreenCover(isPresented: $showLogin) {
+            NavigationStack {
+                LoginView()
+                    .environmentObject(appState)
             }
         }
     }

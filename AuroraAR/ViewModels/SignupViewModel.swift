@@ -1,9 +1,3 @@
-//
-//  SignupViewModel.swift
-//  AuroraAR
-//
-//  Created by Yujin Jeong on 2025-11-19.
-//
 import Foundation
 import Combine
 
@@ -12,27 +6,40 @@ final class SignupViewModel: ObservableObject {
     @Published var username = ""
     @Published var email = ""
     @Published var password = ""
+    @Published var confirmPassword = ""
     @Published var isLoading = false
     @Published var errorMessage: String?
 
-    func signUp() async -> Bool {
-        guard !username.isEmpty, !email.isEmpty, !password.isEmpty else {
+    func signUp() async -> AuthResponse? {
+        guard !username.isEmpty, !email.isEmpty, !password.isEmpty, !confirmPassword.isEmpty else {
             errorMessage = "Please fill in all fields."
-            return false
+            return nil
+        }
+
+        guard password == confirmPassword else {
+            errorMessage = "Passwords do not match."
+            return nil
         }
 
         isLoading = true
         errorMessage = nil
 
         do {
-            try await AuthService.shared.register(username: username, email: email, password: password)
+            let auth = try await AuthService.shared.register(
+                username: username,
+                email: email,
+                password: password,
+                confirmPassword: confirmPassword
+            )
             isLoading = false
-            return true
+            return auth
         } catch {
             isLoading = false
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? "Sign up failed."
-            return false
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+                ?? "Sign up failed."
+            print("❌ [SignupViewModel] signUp error:", error)
+            return nil
         }
     }
 }
-

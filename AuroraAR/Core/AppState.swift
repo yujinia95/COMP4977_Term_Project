@@ -2,17 +2,32 @@
 //  AppState.swift
 //  AuroraAR
 //
-//  Created by Yujin Jeong on 2025-11-19.
+//  Created by Amal Allaham on 2025-11-19.
 //
 import Foundation
 import Combine
 
 final class AppState: ObservableObject {
-    // Tracks if user is logged in
     @Published var isLoggedIn: Bool = false
 
-    // Logout without token handling: just flip the login state
+    @Published var authToken: String?
+    @Published var currentUser: AuthUser?
+
+ 
+
+    func setSession(token: String, user: AuthUser) {
+        self.authToken = token
+        self.currentUser = user
+        self.isLoggedIn = true
+
+         UserDefaults.standard.set(token, forKey: "authToken")
+    }
+
     func logout() {
+        authToken = nil
+        currentUser = nil
         isLoggedIn = false
+
+         UserDefaults.standard.removeObject(forKey: "authToken")
     }
 }

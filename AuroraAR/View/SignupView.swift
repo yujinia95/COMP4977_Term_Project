@@ -4,7 +4,6 @@ struct SignupView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = SignupViewModel()
     @State private var showErrorAlert = false
-    @State private var navigateToLogin = false
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -41,11 +40,6 @@ struct SignupView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
-                NavigationLink(isActive: $navigateToLogin) {
-                    LoginView()
-                } label: { EmptyView() }
-                .hidden()
-
                 // Fields
                 VStack(spacing: 12) {
                     TextField("Name", text: $viewModel.username)
@@ -62,25 +56,31 @@ struct SignupView: View {
                     SecureField("Password", text: $viewModel.password)
                         .textContentType(.newPassword)
                         .authField()
+
+                    SecureField("Confirm Password", text: $viewModel.confirmPassword)
+                        .textContentType(.newPassword)
+                        .authField()
                 }
 
-                // Error text
+                // Error text in UI
                 if let error = viewModel.errorMessage {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(.red.opacity(0.8))
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 // Sign up button
                 Button {
                     Task {
-                        let success = await viewModel.signUp()
-                        if success {
-                            // After successful signup, navigate to Login
-                            navigateToLogin = true
-                        } else {
-                            showErrorAlert = true
+                        if let auth = await viewModel.signUp() {
+                            // ✅ Save token & user globally
+                            appState.setSession(token: auth.token, user: auth.user)
+
+                            // ✅ Go back to RootView; RootView will now show UserMenuView
+                            dismiss()
                         }
                     }
                 } label: {
@@ -89,7 +89,7 @@ struct SignupView: View {
                 .buttonStyle(FilledButtonStyle())
                 .disabled(viewModel.isLoading)
 
-                // Link back to login
+                // Link back to login (for existing users)
                 HStack(spacing: 4) {
                     Text("Already have an account?")
                         .foregroundStyle(.black.opacity(0.6))
@@ -106,10 +106,19 @@ struct SignupView: View {
             .padding(AppTheme.hPadding)
         }
         .toolbar(.hidden, for: .navigationBar)
+
+        // Alert
         .alert("Sign up failed", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(viewModel.errorMessage ?? "Please try again.")
+        }
+
+        // Automatically show alert when ViewModel sets an error
+        .onChange(of: viewModel.errorMessage) { newValue in
+            if newValue != nil {
+                showErrorAlert = true
+            }
         }
     }
 }
@@ -118,4 +127,3 @@ struct SignupView: View {
     NavigationStack { SignupView() }
         .environmentObject(AppState())
 }
-

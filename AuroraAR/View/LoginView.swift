@@ -6,6 +6,7 @@ struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
     @State private var showErrorAlert = false
     @State private var goToMenu = false
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack {

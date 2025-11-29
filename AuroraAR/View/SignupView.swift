@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SignupView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = SignupViewModel()
     @State private var showErrorAlert = false
     @State private var navigateToLogin = false

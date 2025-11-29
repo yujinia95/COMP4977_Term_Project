@@ -1,80 +1,86 @@
-//
-//  AuthService.swift
-//  AuroraAR
-//
-//  Created by Yujin Jeong on 2025-11-19.
-//
-//  This file provides a simple authentication for sending login
-//  and signup requests to the backend
-//  It validates the HTTP response. A 200 response is treated as a successful login/signup.
-//
-
 import Foundation
 
-// For possible authentication related errors
 enum AuthError: Error, LocalizedError {
-    
-    // Didn't get a valid HTTP response
     case invalidResponse
-    // HTTP error status code with a message
     case server(String)
-    
-    // descriptions for UI display.
+
     var errorDescription: String? {
         switch self {
-            
         case .invalidResponse:
             return "Invalid response. Please try again!"
-            
         case .server(let message):
             return message
         }
     }
 }
 
+private struct ServerErrorResponse: Decodable {
+    let message: String?
+}
 
-// Handles all login and registration requests
 final class AuthService {
-    
-    // Singleton instance
     static let shared = AuthService()
     private init() {}
 
+    // MARK: - Login
 
-    // Send login request to the backend
-    func login(usernameOrEmail: String, password: String) async throws {
+    func login(usernameOrEmail: String, password: String) async throws -> AuthResponse {
         let body = LoginRequest(usernameOrEmail: usernameOrEmail, password: password)
-        try await send(body, to: Config.loginURL)
+        let data = try await send(body, to: Config.loginURL)
+        return try JSONDecoder().decode(AuthResponse.self, from: data)
     }
 
-    // Send registration request to the backend
-    func register(username: String, email: String, password: String) async throws {
-        let body = RegisterRequest(username: username, email: email, password: password)
-        try await send(body, to: Config.registerURL)
+    // MARK: - Register
+
+    func register(username: String, email: String, password: String, confirmPassword: String) async throws -> AuthResponse {
+        let body = RegisterRequest(
+            username: username,
+            email: email,
+            password: password,
+            confirmPassword: confirmPassword
+        )
+        let data = try await send(body, to: Config.registerURL)
+        return try JSONDecoder().decode(AuthResponse.self, from: data)
     }
 
-    // Handles all POST requests. Encodes request body, sets headers, and ensures HTTP status is 2xx.
-    private func send<T: Encodable>(_ body: T, to url: URL) async throws {
-        
-        // Build request
+    // MARK: - Shared POST
+
+    private func send<T: Encodable>(_ body: T, to url: URL) async throws -> Data {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(body)
 
-        // Make HTTP call
-        let (_, response) = try await URLSession.shared.data(for: request)
+        // Debug outgoing request
+        if let httpBody = request.httpBody,
+           let json = String(data: httpBody, encoding: .utf8) {
+            print("➡️ [AuthService] POST \(url.absoluteString)")
+            print("➡️ Body:", json)
+        }
 
-        // Ensure receive a proper HTTP response
+        let (data, response) = try await URLSession.shared.data(for: request)
+
         guard let http = response as? HTTPURLResponse else {
+            print("❌ [AuthService] Invalid HTTPURLResponse")
             throw AuthError.invalidResponse
         }
-        
-        // Check if backend returned a success status code
-        guard (200..<300).contains(http.statusCode) else {
-            let message = HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
-            throw AuthError.server(message)
+
+        print("⬇️ [AuthService] Status:", http.statusCode)
+        if let text = String(data: data, encoding: .utf8) {
+            print("⬇️ [AuthService] Response:", text)
         }
+
+        guard (200..<300).contains(http.statusCode) else {
+            if let apiError = try? JSONDecoder().decode(ServerErrorResponse.self, from: data),
+               let message = apiError.message,
+               !message.isEmpty {
+                throw AuthError.server(message)
+            } else {
+                let fallback = HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
+                throw AuthError.server(fallback.capitalized)
+            }
+        }
+
+        return data
     }
 }
-

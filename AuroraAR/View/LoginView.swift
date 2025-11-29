@@ -11,6 +11,7 @@ struct LoginView: View {
         NavigationStack {
             ZStack {
                 PastelStripeBackground()
+                
                 VStack(spacing: AppTheme.vSpacing) {
                     // (removed custom in-view Back button)
                     // Title
@@ -18,22 +19,26 @@ struct LoginView: View {
                         Text("Welcome back")
                             .font(.title.weight(.bold))
                             .foregroundStyle(.black.opacity(0.9))
+                        
                         Text("Log in to continue")
                             .foregroundStyle(.black.opacity(0.6))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    
                     // Login form
                     VStack(spacing: 12) {
-                        TextField("Email", text: $viewModel.usernameOrEmail)
-                            .textContentType(.emailAddress)
+                        TextField("Email or username", text: $viewModel.usernameOrEmail)
+                            .textContentType(.username)
                             .keyboardType(.emailAddress)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .authField()
+                        
                         SecureField("Password", text: $viewModel.password)
                             .textContentType(.password)
                             .authField()
                     }
+                    
                     // Error text
                     if let error = viewModel.errorMessage {
                         Text(error)
@@ -41,13 +46,14 @@ struct LoginView: View {
                             .foregroundStyle(.red.opacity(0.8))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    
                     // Login button
                     Button {
                         Task {
-                            let success = await viewModel.login()
-                            if success {
-                                appState.isLoggedIn = true
-                                goToMenu = true
+                            if let auth = await viewModel.login() {
+                                // New authentication + authorization flow
+                                appState.setSession(token: auth.token, user: auth.user)
+                                dismiss()   // go back after successful login
                             } else {
                                 showErrorAlert = true
                             }
@@ -57,10 +63,12 @@ struct LoginView: View {
                     }
                     .buttonStyle(FilledButtonStyle())
                     .disabled(viewModel.isLoading)
+                    
                     // Link to signup
                     HStack(spacing: 4) {
                         Text("Don't have an account?")
                             .foregroundStyle(.black.opacity(0.6))
+                        
                         NavigationLink("Sign up") {
                             SignupView()
                         }
@@ -68,12 +76,8 @@ struct LoginView: View {
                         .foregroundStyle(Color.pastelBlue)
                     }
                     .padding(.top, 4)
+                    
                     Spacer()
-                    // NavigationLink to UserMenuView (hidden)
-                    NavigationLink(destination: UserMenuView().environmentObject(appState), isActive: $goToMenu) {
-                        EmptyView()
-                    }
-                    .hidden()
                 }
                 .padding(AppTheme.hPadding)
             }
@@ -91,3 +95,4 @@ struct LoginView: View {
     NavigationStack { LoginView() }
         .environmentObject(AppState())
 }
+

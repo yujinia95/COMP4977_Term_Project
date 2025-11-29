@@ -12,8 +12,8 @@ enum Config {
     static let baseURL = "https://aurora-bcbjb2g9h3g6f3em.canadacentral-01.azurewebsites.net"
     
     // Backend endpoints
-    static let loginEndpoint    = "/api/users/login"
-    static let registerEndpoint = "/api/users/register"
+    static let loginEndpoint    = "/api/auth/login"
+    static let registerEndpoint = "/api/auth/register"
     
     // Backend Complete URL with endpoints
     static var loginURL: URL { URL(string: baseURL + loginEndpoint)! }

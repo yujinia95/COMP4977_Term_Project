@@ -5,95 +5,94 @@ struct LoginView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = LoginViewModel()
     @State private var showErrorAlert = false
+    @State private var goToMenu = false
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        ZStack {
-            PastelStripeBackground()
-            
-            VStack(spacing: AppTheme.vSpacing) {
-                
-                // Back Button
-                HStack {
+        NavigationStack {
+            ZStack {
+                PastelStripeBackground()
+                VStack(spacing: AppTheme.vSpacing) {
+                    // Back Button
+                    HStack {
+                        Button {
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.left")
+                                Text("Back")
+                            }
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(.black.opacity(0.8))
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 4)
+                        }
+                        Spacer()
+                    }
+                    // Title
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Welcome back")
+                            .font(.title.weight(.bold))
+                            .foregroundStyle(.black.opacity(0.9))
+                        Text("Log in to continue")
+                            .foregroundStyle(.black.opacity(0.6))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    // Login form
+                    VStack(spacing: 12) {
+                        TextField("Email", text: $viewModel.usernameOrEmail)
+                            .textContentType(.emailAddress)
+                            .keyboardType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .authField()
+                        SecureField("Password", text: $viewModel.password)
+                            .textContentType(.password)
+                            .authField()
+                    }
+                    // Error text
+                    if let error = viewModel.errorMessage {
+                        Text(error)
+                            .font(.footnote)
+                            .foregroundStyle(.red.opacity(0.8))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    // Login button
                     Button {
-                        dismiss()
+                        Task {
+                            let success = await viewModel.login()
+                            if success {
+                                appState.isLoggedIn = true
+                                goToMenu = true
+                            } else {
+                                showErrorAlert = true
+                            }
+                        }
                     } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
+                        Text(viewModel.isLoading ? "Logging in…" : "Log in")
+                    }
+                    .buttonStyle(FilledButtonStyle())
+                    .disabled(viewModel.isLoading)
+                    // Link to signup
+                    HStack(spacing: 4) {
+                        Text("Don't have an account?")
+                            .foregroundStyle(.black.opacity(0.6))
+                        NavigationLink("Sign up") {
+                            SignupView()
                         }
                         .font(.callout.weight(.semibold))
-                        .foregroundStyle(.black.opacity(0.8))
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 4)
+                        .foregroundStyle(Color.pastelBlue)
                     }
-
+                    .padding(.top, 4)
                     Spacer()
-                }
-                
-                // Title
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Welcome back")
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.black.opacity(0.9))
-                    Text("Log in to continue")
-                        .foregroundStyle(.black.opacity(0.6))
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                
-                // Login form
-                VStack(spacing: 12) {
-                    TextField("Email", text: $viewModel.usernameOrEmail)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .authField()
-                    
-                    SecureField("Password", text: $viewModel.password)
-                        .textContentType(.password)
-                        .authField()
-                }
-                
-                // Error text
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(.footnote)
-                        .foregroundStyle(.red.opacity(0.8))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
-                // Login button
-                Button {
-                    Task {
-                        let success = await viewModel.login()
-                        if success {
-                            appState.isLoggedIn = true
-                        } else {
-                            showErrorAlert = true
-                        }
+                    // NavigationLink to UserMenuView (hidden)
+                    NavigationLink(destination: UserMenuView().environmentObject(appState), isActive: $goToMenu) {
+                        EmptyView()
                     }
-                } label: {
-                    Text(viewModel.isLoading ? "Logging in…" : "Log in")
+                    .hidden()
                 }
-                .buttonStyle(FilledButtonStyle())
-                .disabled(viewModel.isLoading)
-                
-                // Link to signup
-                HStack(spacing: 4) {
-                    Text("Don't have an account?")
-                        .foregroundStyle(.black.opacity(0.6))
-                    NavigationLink("Sign up") {
-                        SignupView()
-                    }
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(Color.pastelBlue)
-                }
-                .padding(.top, 4)
-                
-                Spacer()
+                .padding(AppTheme.hPadding)
             }
-            .padding(AppTheme.hPadding)
         }
         .toolbar(.hidden, for: .navigationBar)
         .alert("Login failed", isPresented: $showErrorAlert) {

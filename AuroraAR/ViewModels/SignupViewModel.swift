@@ -25,11 +25,17 @@ final class SignupViewModel: ObservableObject {
         errorMessage = nil
 
         do {
+            // Normalize inputs before registering
+            let signupUsername = username.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let signupEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let signupPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+            let signupConfirm = confirmPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+
             let auth = try await AuthService.shared.register(
-                username: username,
-                email: email,
-                password: password,
-                confirmPassword: confirmPassword
+                username: signupUsername,
+                email: signupEmail,
+                password: signupPassword,
+                confirmPassword: signupConfirm
             )
             isLoading = false
             return auth

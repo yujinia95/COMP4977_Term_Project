@@ -25,10 +25,15 @@ final class LoginViewModel: ObservableObject {
         errorMessage = nil
 
         do {
+            // Normalize inputs: trim whitespace and use lowercase for username/email
+            let identifier = usernameOrEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalizedIdentifier = identifier.lowercased()
+            let pw = password.trimmingCharacters(in: .whitespacesAndNewlines)
+
             // 🔐 Call API and get token + user
             let auth = try await AuthService.shared.login(
-                usernameOrEmail: usernameOrEmail,
-                password: password
+                usernameOrEmail: normalizedIdentifier,
+                password: pw
             )
 
             isLoading = false

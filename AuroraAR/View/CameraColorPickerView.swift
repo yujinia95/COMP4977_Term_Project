@@ -36,24 +36,7 @@ struct CameraColorPickerView: View {
             }
 
             VStack {
-                // Top bar with back button
-                HStack {
-                    Button {
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
-                        }
-                        .font(.callout.weight(.semibold))
-                        .padding(8)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Capsule())
-                    }
-
-                    Spacer()
-                }
-                .padding([.top, .horizontal], 16)
+                // (removed custom Back button — use system back button)
 
                 Spacer()
 

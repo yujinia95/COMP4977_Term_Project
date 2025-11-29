@@ -6,29 +6,13 @@ struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
     @State private var showErrorAlert = false
     @State private var goToMenu = false
-    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack {
             ZStack {
                 PastelStripeBackground()
                 VStack(spacing: AppTheme.vSpacing) {
-                    // Back Button
-                    HStack {
-                        Button {
-                            dismiss()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "chevron.left")
-                                Text("Back")
-                            }
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(.black.opacity(0.8))
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 4)
-                        }
-                        Spacer()
-                    }
+                    // (removed custom in-view Back button)
                     // Title
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Welcome back")
@@ -94,7 +78,7 @@ struct LoginView: View {
                 .padding(AppTheme.hPadding)
             }
         }
-        .toolbar(.hidden, for: .navigationBar)
+        
         .alert("Login failed", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) {}
         } message: {

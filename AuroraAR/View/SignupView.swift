@@ -5,7 +5,6 @@ struct SignupView: View {
     @StateObject private var viewModel = SignupViewModel()
     @State private var showErrorAlert = false
     @State private var navigateToLogin = false
-    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ZStack {
@@ -13,23 +12,7 @@ struct SignupView: View {
 
             VStack(spacing: AppTheme.vSpacing) {
                 
-                // Back Button
-                HStack {
-                    Button {
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
-                        }
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.black.opacity(0.8))
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 4)
-                    }
-
-                    Spacer()
-                }
+                // (removed custom in-view Back button)
                 
                 // Title
                 VStack(alignment: .leading, spacing: 8) {
@@ -105,7 +88,7 @@ struct SignupView: View {
             }
             .padding(AppTheme.hPadding)
         }
-        .toolbar(.hidden, for: .navigationBar)
+        
         .alert("Sign up failed", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) {}
         } message: {

@@ -90,6 +90,8 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
     // - Group similar colors into "buckets"
     // - Pick the top 3 most common buckets
     // - Convert them into UIColor, hex string, and a simple name
+    //
+    // normalizedPoint is now in device coordinate space (0-1 range where 0,0 is top-left of camera sensor)
     func captureColors(at normalizedPoint: CGPoint) {
         guard let buffer = latestBuffer,
               let pixelBuffer = CMSampleBufferGetImageBuffer(buffer) else {
@@ -107,8 +109,9 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
 
         guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return }
 
+        // Now normalizedPoint is already in device coordinates (from preview layer conversion)
         let xCenter = Int(normalizedPoint.x * CGFloat(width))
-        let yCenter = Int((1.0 - normalizedPoint.y) * CGFloat(height))
+        let yCenter = Int(normalizedPoint.y * CGFloat(height))
 
         let radius = 20
         let xMin = max(0, xCenter - radius)

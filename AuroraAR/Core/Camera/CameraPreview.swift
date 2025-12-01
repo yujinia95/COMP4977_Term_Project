@@ -7,6 +7,9 @@ import AVFoundation
 struct CameraPreview: UIViewRepresentable {
     // Create a camera session using AVCaptureSession
     let session: AVCaptureSession
+    
+    // Callback to provide access to the preview layer for coordinate conversion
+    var onPreviewLayerReady: ((AVCaptureVideoPreviewLayer) -> Void)? = nil
 
     // Creates a container view for displaying the camera
     class VideoPreviewView: UIView {
@@ -24,6 +27,10 @@ struct CameraPreview: UIViewRepresentable {
         let view = VideoPreviewView()
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill // fill the entire screen, crop edges if needed
+        
+        // Notify that preview layer is ready for coordinate conversions
+        onPreviewLayerReady?(view.videoPreviewLayer)
+        
         return view
     }
     

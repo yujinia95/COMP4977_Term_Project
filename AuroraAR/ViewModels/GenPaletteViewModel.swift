@@ -38,7 +38,7 @@ struct APIRGB: Codable {
 
 @MainActor
 class PaletteViewModel: ObservableObject {
-    @Published var palette: [PalColor] = []
+    @Published var palette: [PaletteColor] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -72,7 +72,7 @@ class PaletteViewModel: ObservableObject {
                 let decoded = try JSONDecoder().decode(ColorAPIResponse.self, from: data)
 
                 self.palette = decoded.colors.map { item in
-                    PalColor(
+                    PaletteColor(
                         name: item.name.value,
                         hex: item.hex.value,
                         r: item.rgb.r,

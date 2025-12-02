@@ -19,14 +19,13 @@ struct SavedColorsView: View {
                                 .cornerRadius(8)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(String(color.colorId))
-                                    .font(.caption)
                                 Text(color.colorName)
                                     .font(.headline)
+                                    .foregroundColor(.black)
                                 
                                 Text(color.colorCode)
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.black)
                             }
                         }
                         .padding(.vertical, 6)

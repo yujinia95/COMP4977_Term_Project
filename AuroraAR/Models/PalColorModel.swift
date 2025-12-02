@@ -8,7 +8,7 @@
 import Foundation
 
 
-struct PalColor: Codable {
+struct PaletteColor: Codable {
     let name: String
     let hex: String
     let r: Int

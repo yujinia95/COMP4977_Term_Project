@@ -25,7 +25,7 @@ struct APIName: Codable {
 }
 
 struct APIHex: Codable {
-    let value: String  // "#241BA0"
+    let value: String  
 }
 
 struct APIRGB: Codable {

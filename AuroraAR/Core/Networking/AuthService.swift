@@ -14,7 +14,6 @@ enum AuthError: Error, LocalizedError {
     }
 }
 
-
 private struct ServerErrorResponse: Decodable {
     let message: String?
 }
@@ -23,15 +22,12 @@ final class AuthService {
     static let shared = AuthService()
     private init() {}
 
-    // MARK: - Login
-
     func login(usernameOrEmail: String, password: String) async throws -> AuthResponse {
         let body = LoginRequest(usernameOrEmail: usernameOrEmail, password: password)
         let data = try await send(body, to: Config.loginURL)
         return try JSONDecoder().decode(AuthResponse.self, from: data)
     }
 
-    // MARK: - Register
 
     func register(username: String, email: String, password: String, confirmPassword: String) async throws -> AuthResponse {
         let body = RegisterRequest(
@@ -44,7 +40,6 @@ final class AuthService {
         return try JSONDecoder().decode(AuthResponse.self, from: data)
     }
 
-    // MARK: - Shared POST
 
     private func send<T: Encodable>(_ body: T, to url: URL) async throws -> Data {
         var request = URLRequest(url: url)
@@ -62,11 +57,9 @@ final class AuthService {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
-            print("❌ [AuthService] Invalid HTTPURLResponse")
             throw AuthError.invalidResponse
         }
 
-        print("⬇️ [AuthService] Status:", http.statusCode)
         if let text = String(data: data, encoding: .utf8) {
             print("⬇️ [AuthService] Response:", text)
         }

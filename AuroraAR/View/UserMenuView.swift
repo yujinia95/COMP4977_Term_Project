@@ -32,6 +32,14 @@ struct UserMenuView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(FilledButtonStyle())
+                    
+                    NavigationLink {
+                        ARSurfaceView()
+                    } label: {
+                        Label("Place on Surface", systemImage: "table.furniture")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OutlineButtonStyle())
 
                     NavigationLink {
                         SavedColorsView()
@@ -40,7 +48,7 @@ struct UserMenuView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(OutlineButtonStyle())
-                    
+                 
                     NavigationLink {
                         GenPaletteView()
                     } label: {

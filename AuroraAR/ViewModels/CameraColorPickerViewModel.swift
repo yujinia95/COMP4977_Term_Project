@@ -154,7 +154,7 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
 
             let color = UIColor(red: r, green: g, blue: b, alpha: 1.0)
             let hex = Self.hexString(from: color)
-            let name = Self.simpleName(for: color)
+            let name = Self.nearestNamedColor(to: color)
 
             result.append(DetectedColor(uiColor: color, hex: hex, name: name))
         }
@@ -175,26 +175,45 @@ final class CameraColorPickerViewModel: NSObject, ObservableObject {
     // Gives a simple human-readable name based on the color’s
     // - Black / White / Gray based on brightness & saturation
     // - Otherwise, chooses a color name based on hue angle
-    private static func simpleName(for color: UIColor) -> String {
-        var h: CGFloat = 0, s: CGFloat = 0, v: CGFloat = 0, a: CGFloat = 0
-        color.getHue(&h, saturation: &s, brightness: &v, alpha: &a)
-
-        if v < 0.15 { return "Black" }
-        if v > 0.92 && s < 0.15 { return "White" }
-        if s < 0.2 { return "Gray" }
-
-        let deg = h * 360
-        switch deg {
-        case 0..<15, 345...360: return "Red"
-        case 15..<45: return "Orange"
-        case 45..<65: return "Yellow"
-        case 65..<170: return "Green"
-        case 170..<200: return "Cyan"
-        case 200..<250: return "Blue"
-        case 250..<290: return "Purple"
-        case 290..<330: return "Magenta"
-        default: return "Color"
+    private static func nearestNamedColor(to color: UIColor) -> String {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        
+        var closestName = "Unknown"
+        var closestDistance = CGFloat.infinity
+        
+        for named in namedColors {
+            var nr: CGFloat = 0, ng: CGFloat = 0, nb: CGFloat = 0, na: CGFloat = 0
+            named.color.getRed(&nr, green: &ng, blue: &nb, alpha: &na)
+            
+            let dist = pow(r - nr, 2) + pow(g - ng, 2) + pow(b - nb, 2)
+            
+            if dist < closestDistance {
+                closestDistance = dist
+                closestName = named.name
+            }
         }
+        
+        return closestName
+    }
+    
+    func saveColor(colorName: String, colorCode: String) async -> ColorResponse?{
+        var errorMessage = ""
+        guard !colorName.isEmpty, !colorCode.isEmpty else {
+            errorMessage = "Color name or Color code are empty"
+            return nil
+        }
+        
+        do {
+            let request = try await ColorService.shared.AddColor(colorName: colorName, colorCode: colorCode)
+            return request
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+            print("❌ [CAMERA] SAVING error:", error)
+            return nil
+        }
+        
     }
 }
 

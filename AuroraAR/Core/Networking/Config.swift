@@ -15,8 +15,15 @@ enum Config {
     static let loginEndpoint    = "/api/auth/login"
     static let registerEndpoint = "/api/auth/register"
     
+    static let ColorsEndpoint = "/api/colors"
+    static let colorsByIDEndpoint   = "/api/colors/"
+    
     // Backend Complete URL with endpoints
     static var loginURL: URL { URL(string: baseURL + loginEndpoint)! }
     static var registerURL: URL { URL(string: baseURL + registerEndpoint)! }
+    static var colorsURL: URL { URL(string: baseURL + ColorsEndpoint)! }
+    
+    static func colorByIDURL(_ id: Int) -> URL {
+            return URL(string: baseURL + colorsByIDEndpoint + "\(id)")!
+    }
 }
-

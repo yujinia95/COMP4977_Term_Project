@@ -117,6 +117,9 @@ struct CameraColorPickerView: View {
                                             .lineLimit(1)
 
                                         Button {
+                                            Task {
+                                                await viewModel.saveColor(colorName: color.name, colorCode: color.hex)
+                                            }
                                         } label: {
                                             Text("Save")
                                                 .font(.caption2.bold())
@@ -125,6 +128,7 @@ struct CameraColorPickerView: View {
                                                 .background(.white.opacity(0.15))
                                                 .clipShape(Capsule())
                                         }
+
                                     }
                                 }
                             }

@@ -37,6 +37,7 @@ final class SignupViewModel: ObservableObject {
                 password: signupPassword,
                 confirmPassword: signupConfirm
             )
+            AuthStorage.token = auth.token
             isLoading = false
             return auth
         } catch {

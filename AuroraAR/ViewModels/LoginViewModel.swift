@@ -36,6 +36,7 @@ final class LoginViewModel: ObservableObject {
                 password: pw
             )
 
+            AuthStorage.token = auth.token
             isLoading = false
             return auth
         } catch {

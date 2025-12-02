@@ -34,8 +34,17 @@ struct UserMenuView: View {
                     .buttonStyle(FilledButtonStyle())
 
                     NavigationLink {
+                        SavedColorsView()
                     } label: {
                         Label("Saved Colors", systemImage: "paintpalette")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OutlineButtonStyle())
+                    
+                    NavigationLink {
+                        GenPaletteView()
+                    } label: {
+                        Label("Generate Palette", systemImage: "paintbrush.pointed")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(OutlineButtonStyle())

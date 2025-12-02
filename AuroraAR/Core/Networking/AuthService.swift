@@ -14,6 +14,7 @@ enum AuthError: Error, LocalizedError {
     }
 }
 
+
 private struct ServerErrorResponse: Decodable {
     let message: String?
 }

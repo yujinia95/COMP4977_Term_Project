@@ -21,6 +21,7 @@ class SurfaceARViewController: UIViewController, ARSessionDelegate {
     // Show plane-detected alert once
     private var hasShownSurfaceAlert = false
 
+
     override func loadView() {
         arView = ARView(frame: .zero)
         view = arView
@@ -32,22 +33,25 @@ class SurfaceARViewController: UIViewController, ARSessionDelegate {
         startPlaneDetection()
         setupColorPalette()
 
-        arView.addGestureRecognizer(
-            UITapGestureRecognizer(target: self, action: #selector(handleTap(recognizer:)))
+        let tapGesture = UITapGestureRecognizer(
+            target: self,
+            action: #selector(handleTap(recognizer:))
         )
+        arView.addGestureRecognizer(tapGesture)
     }
 
-    func startPlaneDetection () {
-        arView.automaticallyConfigureSession = true
+
+    func startPlaneDetection() {
+        arView.automaticallyConfigureSession = false
 
         let configuration = ARWorldTrackingConfiguration()
-        // For walls
-        configuration.planeDetection = [.vertical]
+        configuration.planeDetection = [.horizontal]
         configuration.environmentTexturing = .automatic
 
         arView.session.delegate = self
-        arView.session.run(configuration)
+        arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
+
 
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         guard !hasShownSurfaceAlert else { return }
@@ -58,7 +62,7 @@ class SurfaceARViewController: UIViewController, ARSessionDelegate {
             DispatchQueue.main.async {
                 let alert = UIAlertController(
                     title: "Surface Detected",
-                    message: "You can now tap to place rectangles on the wall.",
+                    message: "You can now tap to place rectangles on the table or floor.",
                     preferredStyle: .alert
                 )
                 alert.addAction(UIAlertAction(title: "OK", style: .default))
@@ -67,41 +71,56 @@ class SurfaceARViewController: UIViewController, ARSessionDelegate {
         }
     }
 
+
+
     @objc
     func handleTap(recognizer: UITapGestureRecognizer) {
         let tapLocation = recognizer.location(in: arView)
 
+        // Raycast against horizontal surfaces
         let results = arView.raycast(
             from: tapLocation,
-            allowing: .estimatedPlane,
-            alignment: .vertical
+            allowing: .existingPlaneGeometry,
+            alignment: .horizontal
         )
 
-        if let firstResult = results.first {
-            let worldPos = simd_make_float3(firstResult.worldTransform.columns.3)
+        guard let firstResult = results.first else { return }
 
-            let rectangle = createRectangle()
-            placeObject(object: rectangle, at: worldPos)
-        }
+        let transform = firstResult.worldTransform
+        var position = SIMD3<Float>(
+            transform.columns.3.x,
+            transform.columns.3.y,
+            transform.columns.3.z
+        )
+
+        position.y += 0.001
+
+        let rectangle = createRectangle()
+
+        let anchor = AnchorEntity(world: position)
+        anchor.addChild(rectangle)
+        arView.scene.addAnchor(anchor)
     }
 
-    func createRectangle() -> ModelEntity {
-        let width: Float = 0.4      // 40 cm
-        let height: Float = 0.4     // 40 cm
 
-        let mesh = MeshResource.generatePlane(width: width, height: height)
-        let material = SimpleMaterial(color: selectedColor, roughness: 0.3, isMetallic: false)
+    func createRectangle() -> ModelEntity {
+        // Smaller square: 15 cm x 15 cm
+        let size: Float = 0.15
+        let mesh = MeshResource.generatePlane(width: size, height: size)
+
+        let material = SimpleMaterial(
+            color: selectedColor,
+            roughness: 0.25,
+            isMetallic: false
+        )
 
         let entity = ModelEntity(mesh: mesh, materials: [material])
 
-        // For vertical plane, plane already faces user, no rotation needed
-        return entity
-    }
+        
+        let rotation = simd_quatf(angle: -.pi / 2, axis: SIMD3<Float>(1, 0, 0))
+        entity.orientation = rotation
 
-    func placeObject(object: ModelEntity, at location: SIMD3<Float>) {
-        let objectAnchor = AnchorEntity(world: location)
-        objectAnchor.addChild(object)
-        arView.scene.addAnchor(objectAnchor)
+        return entity
     }
 
 
@@ -144,7 +163,9 @@ class SurfaceARViewController: UIViewController, ARSessionDelegate {
             button.heightAnchor.constraint(equalToConstant: 36).isActive = true
 
             button.tag = index
-            button.addTarget(self, action: #selector(colorButtonTapped(_:)), for: .touchUpInside)
+            button.addTarget(self,
+                             action: #selector(colorButtonTapped(_:)),
+                             for: .touchUpInside)
 
             stack.addArrangedSubview(button)
         }
